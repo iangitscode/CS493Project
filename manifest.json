@@ -8,8 +8,8 @@
     "js": ["content.js"]
   }],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["content.js"]
   },
   "browser_action": {},
-  "permissions": ["activeTab"]
+  "permissions": ["activeTab", "storage"]
 }
