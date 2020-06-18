@@ -10,5 +10,7 @@
 # Trying out the script
 - Make sure you have boto3 (AWS SDK for Python) installed ```pip3 install boto3```
 - Make sure test.mp4 is in your directory
+- Maks sure Flask is installed ```(pip3 install flask)```
 - Run with Python3 ```python3 upload_video_get_transcript.py```
+- Go to your browser and type in ```localhost:5000/transcribe```
 This script uploads test.mp4 and runs AWS Transcribe on it, then outputs the results to console
