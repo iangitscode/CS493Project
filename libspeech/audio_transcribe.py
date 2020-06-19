@@ -16,9 +16,10 @@ with sr.AudioFile(AUDIO_FILE) as source:
     # recognize speech using Sphinx
     try:
         framerate = .01
-        decoder = r.recognize_sphinx(audio, show_all=False)
-        print(decoder)
-        print([(seg.word, seg.start_frame/framerate)for seg in decoder.seg()])
+        decoder = r.recognize_sphinx(audio, language="en-US", keyword_entries=None, grammar=None, show_all=True)
+        segments = decoder.seg()
+        for seg in decoder.seg():
+            print(seg.word, seg.start_frame/framerate)
     except sr.UnknownValueError:
         print("Sphinx could not understand audio")
     except sr.RequestError as e:
