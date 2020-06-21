@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 s3client = boto3.client('s3')
 s3 = boto3.resource('s3')
-transcribe = boto3.client('transcribe')
+aws_transcribe = boto3.client('transcribe')
 s3resource = boto3.resource('s3')
 
 @app.route('/')
@@ -42,7 +42,7 @@ def transcribe():
       job_name = 'test-transcription-{}'.format(uuid.uuid4())
       print('Starting transcription work with job name {} on file {}'.format(job_name, url))
 
-      transcribe.start_transcription_job(
+      aws_transcribe.start_transcription_job(
           TranscriptionJobName=job_name,
           Media={'MediaFileUri': url},
           # TODO(ian): This should be variable media format based on input
@@ -52,20 +52,14 @@ def transcribe():
 
       print('Polling list of transcription jobs to check for completion')
       while True:
-          status = transcribe.get_transcription_job(TranscriptionJobName=job_name)
+          status = aws_transcribe.get_transcription_job(TranscriptionJobName=job_name)
           if status['TranscriptionJob']['TranscriptionJobStatus'] in ['COMPLETED', 'FAILED']:
               break
           print("Not ready yet...")
           time.sleep(5)
 
-      print('Full job status: ')
-      print(status)
-
       # Extract transcription data from job
       data = requests.get(status['TranscriptionJob']['Transcript']['TranscriptFileUri'])
-
-      print("My Transcription:")
-      print(data.json())
 
     finally:
       bucket = s3resource.Bucket(bucket_name)
@@ -79,7 +73,39 @@ def transcribe():
 
       print('Deleting the bucket.')
       bucket.delete()
-    return status
+    return json.dumps(postProcessData(data.json()))
+
+# Handle all postprocessing work for the data
+def postProcessData(data):
+  result = {}
+  result["timestamps"] = extractSimpleTimestamps(data)
+  result["complete_transcript"] = data["results"]["transcripts"][0]["transcript"]
+  return result
+
+# Make output format smaller by removing unnecessary data
+# Output format will look like 
+# {
+#  "timestamps": 
+#   [
+#     {"time": "0.14", "word": "Hello"}, 
+#     {"time": -1, "word": ","}, 
+#     {"time": "0.81", "word": "world"}, 
+#     {"time": -1, "word": "."}
+#   ], 
+#  "complete_transcript": "Hello, world. This is a test."
+# }
+
+def extractSimpleTimestamps(data):
+  result = []
+  for item in data["results"]["items"]:
+    mostLikelyWord = max(item["alternatives"], key=lambda x: x["confidence"])["content"]
+    if item["type"] == "punctuation":
+      result.append({"time": -1, "word": mostLikelyWord})
+    else:
+      result.append({"time": item["start_time"], "word": mostLikelyWord})
+  return result
 
 if __name__ == '__main__':
-    app.run()
+  app.run()
+
+
