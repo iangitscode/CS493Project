@@ -14,8 +14,12 @@ s3 = boto3.resource('s3')
 transcribe = boto3.client('transcribe')
 s3resource = boto3.resource('s3')
 
-@app.route('/transcribe')
+@app.route('/')
 def run():
+  return render_template('transcribe.html')
+
+@app.route('/transcribe')
+def transcribe():
     # Create a temporary bucket to store the file in
     # Bucket names must be unique, hence the uuid
     # TODO(ian): Maybe it'd be better to use one known bucket instead of generating one each time
@@ -75,7 +79,7 @@ def run():
 
       print('Deleting the bucket.')
       bucket.delete()
-    return render_template('transcribe.html')
+    return status
 
 if __name__ == '__main__':
     app.run()
