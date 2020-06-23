@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Flask Parent Template</title>
+  <script src="/static/script.js"></script>
+  <link rel="stylesheet" type="text/css" href="/static/styles.css"/>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo">Transcription App</h1>
+      <video id="video" width="1000" height="800" controls>
+        <source src="/static/test.mp4" type="video/mp4">
+      </video>
+
+      <!-- Temporary: Replace this with a proper POST request with the video-->
+      <button onclick="getTranscription()">Get Transcription</button>
+
+      <div id="transcript-box"></div>
+     </div>
+   </header>
+
+   {% block content %}
+   {% endblock %}
+
+</body>
+</html>

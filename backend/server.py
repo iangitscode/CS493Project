@@ -16,7 +16,7 @@ s3resource = boto3.resource('s3')
 
 @app.route('/')
 def run():
-  return render_template('transcribe.html')
+  return render_template('index.html')
 
 @app.route('/transcribe')
 def transcribe():
@@ -36,7 +36,7 @@ def transcribe():
           bucket_name, object_key))
 
       # Perform the upload
-      s3.meta.client.upload_file('test.mp4', bucket_name, object_key)
+      s3.meta.client.upload_file('static/test.mp4', bucket_name, object_key)
 
       url = 'https://{}.s3.amazonaws.com/{}'.format(bucket_name, object_key)
       job_name = 'test-transcription-{}'.format(uuid.uuid4())
@@ -99,13 +99,13 @@ def extractSimpleTimestamps(data):
   result = []
   for item in data["results"]["items"]:
     mostLikelyWord = max(item["alternatives"], key=lambda x: x["confidence"])["content"]
-    if item["type"] == "punctuation":
-      result.append({"time": -1, "word": mostLikelyWord})
-    else:
-      result.append({"time": item["start_time"], "word": mostLikelyWord})
+    next_word = {"time": -1, "word": mostLikelyWord, "type": item["type"]}
+    if item["type"] == "pronunciation":
+      next_word["time"] = item["start_time"]
+    result.append(next_word)
+      
   return result
 
 if __name__ == '__main__':
   app.run()
-
 
