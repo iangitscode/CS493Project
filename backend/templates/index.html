@@ -10,9 +10,12 @@
   <header>
     <div class="container">
       <h1 class="logo">Transcription App</h1>
-      <video id="video" width="1000" height="800" controls>
-        <source src="/static/test.mp4" type="video/mp4">
-      </video>
+      <iframe id="player" width="1000" height="800" src="https://www.youtube.com/embed/PwrNM5nSYms" frameborder="0">
+      </iframe>
+
+      <!-- <video id="video" width="1000" height="800" controls>
+        <iframe src="https://www.youtube.com/watch?v=PwrNM5nSYms">
+      </video> -->
 
       <!-- Temporary: Replace this with a proper POST request with the video-->
       <button onclick="getTranscription()">Get Transcription</button>

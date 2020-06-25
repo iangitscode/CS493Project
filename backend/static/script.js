@@ -3,13 +3,16 @@
 // This has to be a POSt with the video link or video data later, then we can just call processResponse()
 function getTranscription() {
   let xhttp = new XMLHttpRequest();
+  const video = document.getElementsByTagName("iframe");
+  const url = video[0].src;
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
       processResponse(xhttp.responseText);
     }
   };
-  xhttp.open("GET", "http://localhost:5000/transcribe", true);
-  xhttp.send();
+  xhttp.open("POST", "http://localhost:5000/transcribe", true);
+  xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+  xhttp.send(url);
 }
 
 function processResponse(response) {
@@ -41,6 +44,6 @@ function processResponse(response) {
 }
 
 function navigateVideo(time) {
-  let video = document.getElementById("video");
+  let video = document.getElementById("player");
   video.currentTime = time;
 }

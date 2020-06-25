@@ -1,12 +1,12 @@
 # AWS SDK for Python
 import boto3
-
+import os
 import uuid
 import time
 import requests
 import json
-
-from flask import Flask, render_template
+from pytube import YouTube
+from flask import Flask, request, render_template
 app = Flask(__name__)
 
 s3client = boto3.client('s3')
@@ -18,7 +18,7 @@ s3resource = boto3.resource('s3')
 def run():
   return render_template('index.html')
 
-@app.route('/transcribe')
+@app.route('/transcribe', methods=['POST'])
 def transcribe():
     # Create a temporary bucket to store the file in
     # Bucket names must be unique, hence the uuid
@@ -28,15 +28,26 @@ def transcribe():
     s3client.create_bucket(Bucket=bucket_name)
 
     try:
-      # The file in question being uploaded
-      # TODO(ian): Change this to work with arbitrary files
-      object_key = 'test.mp4'
 
+      # Get the url param sent from the front end
+      link = list(request.form.to_dict().keys())[0] + '=' + list(request.form.to_dict().values())[0]
+
+      # Download using pytube library
+      yt = YouTube(link)
+      stream = yt.streams.first()
+      stream.download('static')
+
+      # Get the mp4 name
+      videos = []
+      videos += [each for each in os.listdir('static') if each.endswith('.mp4')]
+      print(videos)
+      object_key = videos[1]
+
+      # Perform the upload
       print('Uploading video to bucket {} with key: {}'.format(
           bucket_name, object_key))
 
-      # Perform the upload
-      s3.meta.client.upload_file('static/test.mp4', bucket_name, object_key)
+      s3.meta.client.upload_file('static/'+object_key, bucket_name, object_key)
 
       url = 'https://{}.s3.amazonaws.com/{}'.format(bucket_name, object_key)
       job_name = 'test-transcription-{}'.format(uuid.uuid4())
@@ -73,6 +84,8 @@ def transcribe():
 
       print('Deleting the bucket.')
       bucket.delete()
+      print('Deleting the youtube video')
+      os.remove('static/'+object_key)
     return json.dumps(postProcessData(data.json()))
 
 # Handle all postprocessing work for the data
@@ -83,15 +96,15 @@ def postProcessData(data):
   return result
 
 # Make output format smaller by removing unnecessary data
-# Output format will look like 
+# Output format will look like
 # {
-#  "timestamps": 
+#  "timestamps":
 #   [
-#     {"time": "0.14", "word": "Hello"}, 
-#     {"time": -1, "word": ","}, 
-#     {"time": "0.81", "word": "world"}, 
+#     {"time": "0.14", "word": "Hello"},
+#     {"time": -1, "word": ","},
+#     {"time": "0.81", "word": "world"},
 #     {"time": -1, "word": "."}
-#   ], 
+#   ],
 #  "complete_transcript": "Hello, world. This is a test."
 # }
 
@@ -103,9 +116,8 @@ def extractSimpleTimestamps(data):
     if item["type"] == "pronunciation":
       next_word["time"] = item["start_time"]
     result.append(next_word)
-      
+
   return result
 
 if __name__ == '__main__':
   app.run()
-
