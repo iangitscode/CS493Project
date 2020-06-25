@@ -35,19 +35,19 @@ def transcribe():
       # Download using pytube library
       yt = YouTube(link)
       stream = yt.streams.first()
-      stream.download('static')
+      stream.download('tmp')
 
       # Get the mp4 name
       videos = []
-      videos += [each for each in os.listdir('static') if each.endswith('.mp4')]
+      videos += [each for each in os.listdir('tmp') if each.endswith('.mp4')]
       print(videos)
-      object_key = videos[1]
+      object_key = videos[0]
 
       # Perform the upload
       print('Uploading video to bucket {} with key: {}'.format(
           bucket_name, object_key))
 
-      s3.meta.client.upload_file('static/'+object_key, bucket_name, object_key)
+      s3.meta.client.upload_file('tmp/'+object_key, bucket_name, object_key)
 
       url = 'https://{}.s3.amazonaws.com/{}'.format(bucket_name, object_key)
       job_name = 'test-transcription-{}'.format(uuid.uuid4())
@@ -85,7 +85,7 @@ def transcribe():
       print('Deleting the bucket.')
       bucket.delete()
       print('Deleting the youtube video')
-      os.remove('static/'+object_key)
+      os.remove('tmp/'+object_key)
     return json.dumps(postProcessData(data.json()))
 
 # Handle all postprocessing work for the data
