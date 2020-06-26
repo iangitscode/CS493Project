@@ -1,21 +1,25 @@
 # AWS SDK for Python
 import boto3
-
+import os
 import uuid
 import time
 import requests
 import json
-
-from flask import Flask, render_template
+from pytube import YouTube
+from flask import Flask, request, render_template
 app = Flask(__name__)
 
 s3client = boto3.client('s3')
 s3 = boto3.resource('s3')
-transcribe = boto3.client('transcribe')
+aws_transcribe = boto3.client('transcribe')
 s3resource = boto3.resource('s3')
 
-@app.route('/transcribe')
+@app.route('/')
 def run():
+  return render_template('index.html')
+
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
     # Create a temporary bucket to store the file in
     # Bucket names must be unique, hence the uuid
     # TODO(ian): Maybe it'd be better to use one known bucket instead of generating one each time
@@ -24,21 +28,32 @@ def run():
     s3client.create_bucket(Bucket=bucket_name)
 
     try:
-      # The file in question being uploaded
-      # TODO(ian): Change this to work with arbitrary files
-      object_key = 'test.mp4'
 
+      # Get the url param sent from the front end
+      link = list(request.form.to_dict().keys())[0] + '=' + list(request.form.to_dict().values())[0]
+
+      # Download using pytube library
+      yt = YouTube(link)
+      stream = yt.streams.first()
+      stream.download('tmp')
+
+      # Get the mp4 name
+      videos = []
+      videos += [each for each in os.listdir('tmp') if each.endswith('.mp4')]
+      print(videos)
+      object_key = videos[0]
+
+      # Perform the upload
       print('Uploading video to bucket {} with key: {}'.format(
           bucket_name, object_key))
 
-      # Perform the upload
-      s3.meta.client.upload_file('test.mp4', bucket_name, object_key)
+      s3.meta.client.upload_file('tmp/'+object_key, bucket_name, object_key)
 
       url = 'https://{}.s3.amazonaws.com/{}'.format(bucket_name, object_key)
       job_name = 'test-transcription-{}'.format(uuid.uuid4())
       print('Starting transcription work with job name {} on file {}'.format(job_name, url))
 
-      transcribe.start_transcription_job(
+      aws_transcribe.start_transcription_job(
           TranscriptionJobName=job_name,
           Media={'MediaFileUri': url},
           # TODO(ian): This should be variable media format based on input
@@ -48,20 +63,14 @@ def run():
 
       print('Polling list of transcription jobs to check for completion')
       while True:
-          status = transcribe.get_transcription_job(TranscriptionJobName=job_name)
+          status = aws_transcribe.get_transcription_job(TranscriptionJobName=job_name)
           if status['TranscriptionJob']['TranscriptionJobStatus'] in ['COMPLETED', 'FAILED']:
               break
           print("Not ready yet...")
           time.sleep(5)
 
-      print('Full job status: ')
-      print(status)
-
       # Extract transcription data from job
       data = requests.get(status['TranscriptionJob']['Transcript']['TranscriptFileUri'])
-
-      print("My Transcription:")
-      print(data.json())
 
     finally:
       bucket = s3resource.Bucket(bucket_name)
@@ -75,7 +84,40 @@ def run():
 
       print('Deleting the bucket.')
       bucket.delete()
-    return render_template('transcribe.html')
+      print('Deleting the youtube video')
+      os.remove('tmp/'+object_key)
+    return json.dumps(postProcessData(data.json()))
+
+# Handle all postprocessing work for the data
+def postProcessData(data):
+  result = {}
+  result["timestamps"] = extractSimpleTimestamps(data)
+  result["complete_transcript"] = data["results"]["transcripts"][0]["transcript"]
+  return result
+
+# Make output format smaller by removing unnecessary data
+# Output format will look like
+# {
+#  "timestamps":
+#   [
+#     {"time": "0.14", "word": "Hello"},
+#     {"time": -1, "word": ","},
+#     {"time": "0.81", "word": "world"},
+#     {"time": -1, "word": "."}
+#   ],
+#  "complete_transcript": "Hello, world. This is a test."
+# }
+
+def extractSimpleTimestamps(data):
+  result = []
+  for item in data["results"]["items"]:
+    mostLikelyWord = max(item["alternatives"], key=lambda x: x["confidence"])["content"]
+    next_word = {"time": -1, "word": mostLikelyWord, "type": item["type"]}
+    if item["type"] == "pronunciation":
+      next_word["time"] = item["start_time"]
+    result.append(next_word)
+
+  return result
 
 if __name__ == '__main__':
-    app.run()
+  app.run()

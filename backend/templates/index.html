@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Flask Parent Template</title>
+  <script src="/static/script.js"></script>
+  <link rel="stylesheet" type="text/css" href="/static/styles.css"/>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo">Transcription App</h1>
+      <iframe id="iframe-player" width="1000" height="800" src="https://www.youtube.com/embed/PwrNM5nSYms" frameborder="0">
+      </iframe>
+
+      <!-- <video id="video" width="1000" height="800" controls>
+        <iframe src="https://www.youtube.com/watch?v=PwrNM5nSYms">
+      </video> -->
+
+      <!-- Temporary: Replace this with a proper POST request with the video-->
+      <button onclick="getTranscription()">Get Transcription</button>
+
+      <div id="transcript-box"></div>
+     </div>
+   </header>
+
+   {% block content %}
+   {% endblock %}
+
+</body>
+</html>
