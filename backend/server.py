@@ -105,7 +105,7 @@ def postProcessData(data):
 #     {"time": "0.81", "word": "world"},
 #     {"time": -1, "word": "."}
 #   ],
-#  "complete_transcript": "Hello, world. This is a test."
+#  "complete_transcript": "Hello, world."
 # }
 
 def extractSimpleTimestamps(data):
