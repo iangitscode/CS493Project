@@ -4,6 +4,7 @@
 from kaldiasr.nnet3 import KaldiNNet3OnlineModel, KaldiNNet3OnlineDecoder
 from pydub import AudioSegment
 from flask import Flask, request, render_template
+from flask_cors import CORS
 
 import subprocess
 import sys
@@ -11,6 +12,7 @@ import os
 import json
 
 app = Flask(__name__)
+CORS(app)
 
 MODELDIR    = '/home/raynor106/data/model/kaldi-generic-en-tdnn_fl-r20190609'
 
