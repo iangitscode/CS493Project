@@ -100,10 +100,10 @@ def postProcessData(data):
 # {
 #  "timestamps":
 #   [
-#     {"time": "0.14", "word": "Hello"},
-#     {"time": -1, "word": ","},
-#     {"time": "0.81", "word": "world"},
-#     {"time": -1, "word": "."}
+#     {"time": "0.14", "word": "Hello", "type": "pronunciation"},
+#     {"time": -1, "word": ",", "type": "punctuation"},
+#     {"time": "0.81", "word": "world", "type": "pronunciation"},
+#     {"time": -1, "word": ".", "type": "punctuation"}
 #   ],
 #  "complete_transcript": "Hello, world."
 # }
