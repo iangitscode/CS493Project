@@ -3,6 +3,8 @@
 
 from kaldiasr.nnet3 import KaldiNNet3OnlineModel, KaldiNNet3OnlineDecoder
 from pydub import AudioSegment
+from deepsegment import DeepSegment
+
 from flask import Flask, request, render_template
 from flask_cors import CORS
 
@@ -14,7 +16,7 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-MODELDIR    = '/home/raynor106/data/model/kaldi-generic-en-tdnn_fl-r20190609'
+MODELDIR    = '/home/raynor106/Public/share/libspeech/model/kaldi-generic-en-tdnn_fl-r20190609'
 
 def delete_if_exists(filepath):
     if os.path.exists(filepath):
@@ -65,7 +67,7 @@ def decode(WAVFILE):
         out_dict["likelihood"] = l
         out_dict["model"] = os.path.basename(MODELDIR)
         out_dict["alignment"] = align
-        return json.dumps(out_dict)
+        return out_dict
         #print()
         #print(u"*****************************************************************")
         #print(u"**", WAVFILE)
@@ -80,6 +82,21 @@ def decode(WAVFILE):
         print("***ERROR: decoding of %s failed." % WAVFILE)
         return "error"
 
+def segment(transcript):
+    # The default language is 'en'
+    segmenter = DeepSegment("en")
+    result = segmenter.segment(transcript)
+    print(result)
+    print("# segments: " + str(len(result)))
+
+def prepare_and_decode(input_filename):
+        mono_wav = prepare_input(input_filename)
+        print("Converted to WAV mono.")
+        output = decode(mono_wav)
+        print("Decoded with Kaldi.") 
+        return output
+
+
 @app.route('/')
 def run():
   return "call /transcribe"
@@ -92,15 +109,19 @@ def transcribe():
         mp4 = open(input_filename, "wb")
         mp4.write(mp4_byte_buffer)
         mp4.close()
-
-        mono_wav = prepare_input(input_filename)
-        output = decode(mono_wav)
+        print("Read MP4.")
+        dict_obj = prepare_and_decode(input_filename)
         delete_if_exists(input_filename)
-        return output
-    except Exception as error:
+        return json.dumps(dict_obj)
+    except Exception as error: 
         delete_if_exists("/tmp/transcribe.mp4")
         print("ERROR: " + str(error))
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    if len(sys.argv) > 1:
+        transcript = prepare_and_decode(sys.argv[1])["transcript"]
+        segment(transcript)
+    else:
+        app.run(host='0.0.0.0', port=10000)
+
