@@ -8,5 +8,8 @@
     "matches": ["<all_urls>"],
     "js": ["content.js"],
     "css": ["styles.css"]
-  }]
+  }],
+  "browser_action": {
+    "default_popup": "popup.html"
+  }
 }
