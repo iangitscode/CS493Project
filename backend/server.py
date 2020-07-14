@@ -5,9 +5,12 @@ import uuid
 import time
 import requests
 import json
+import wget
 from pytube import YouTube
 from flask import Flask, request, render_template
+from flask_cors import CORS
 app = Flask(__name__)
+CORS(app)
 
 s3client = boto3.client('s3')
 s3 = boto3.resource('s3')
@@ -18,7 +21,7 @@ s3resource = boto3.resource('s3')
 def run():
   return render_template('index.html')
 
-@app.route('/transcribe', methods=['POST'])
+@app.route('/transcribe', methods=['GET'])
 def transcribe():
     # Create a temporary bucket to store the file in
     # Bucket names must be unique, hence the uuid
@@ -30,18 +33,25 @@ def transcribe():
     try:
 
       # Get the url param sent from the front end
-      link = list(request.form.to_dict().keys())[0] + '=' + list(request.form.to_dict().values())[0]
+      # link = list(request.form.to_dict().keys())[0] + '=' + list(request.form.to_dict().values())[0]
+      link = request.args.get('url')
+      print("Link is",link)
 
-      # Download using pytube library
-      yt = YouTube(link)
-      stream = yt.streams.first()
-      stream.download('tmp')
+      object_key = ""
+      if "youtube.com" in link:
+        # Download using pytube library
+        yt = YouTube(link)
+        stream = yt.streams.first()
+        stream.download('tmp')
 
-      # Get the mp4 name
-      videos = []
-      videos += [each for each in os.listdir('tmp') if each.endswith('.mp4')]
-      print(videos)
-      object_key = videos[0]
+        # Get the mp4 name
+        videos = []
+        videos += [each for each in os.listdir('tmp') if each.endswith('.mp4')]
+        print(videos)
+        object_key = videos[0]
+      else:
+        wget.download(link, "tmp/download.mp4")
+        object_key = "download.mp4"
 
       # Perform the upload
       print('Uploading video to bucket {} with key: {}'.format(
