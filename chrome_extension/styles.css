@@ -1,4 +1,13 @@
 .transcribeButton {
-  font-size: 30px;
+  font-size: 20px;
   cursor: pointer;
+  border: 1px 1px 1px 1px;
+  background-color: #4CAF50;
+  position: absolute;
+  z-index: 1;
+  visibility: hidden;
+}
+
+.html5-video-container:hover .transcribeButton {
+  visibility: visible;
 }
