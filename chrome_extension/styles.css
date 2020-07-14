@@ -7,7 +7,3 @@
   z-index: 1;
   visibility: hidden;
 }
-
-.html5-video-container:hover .transcribeButton {
-  visibility: visible;
-}

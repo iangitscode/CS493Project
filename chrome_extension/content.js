@@ -75,4 +75,13 @@ for (let video of videos) {
   transcribeButton.innerText="Transcribe";
 
   video.parentNode.insertBefore(transcribeButton, video);
+  // Make transcribe button appear on mouse hover
+  let parentNode = video.parentNode;
+  parentNode.addEventListener("mouseenter", function(event){
+    transcribeButton.style.visibility = "visible";
+  });
+  parentNode.addEventListener("mouseleave", function(event){
+    transcribeButton.style.visibility = "hidden";
+  });
+
 }
