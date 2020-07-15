@@ -21,7 +21,7 @@ s3resource = boto3.resource('s3')
 def run():
   return render_template('index.html')
 
-@app.route('/transcribe', methods=['GET'])
+@app.route('/transcribe', methods=['POST'])
 def transcribe():
     # Create a temporary bucket to store the file in
     # Bucket names must be unique, hence the uuid
@@ -32,26 +32,35 @@ def transcribe():
 
     try:
 
-      # Get the url param sent from the front end
-      # link = list(request.form.to_dict().keys())[0] + '=' + list(request.form.to_dict().values())[0]
-      link = request.args.get('url')
-      print("Link is",link)
+      # Code to get file from URL, used for GET requests
 
-      object_key = ""
-      if "youtube.com" in link:
-        # Download using pytube library
-        yt = YouTube(link)
-        stream = yt.streams.first()
-        stream.download('tmp')
+      # # Get the url param sent from the front end
+      # # link = list(request.form.to_dict().keys())[0] + '=' + list(request.form.to_dict().values())[0]
+      # link = request.args.get('url')
+      # print("Link is",link)
 
-        # Get the mp4 name
-        videos = []
-        videos += [each for each in os.listdir('tmp') if each.endswith('.mp4')]
-        print(videos)
-        object_key = videos[0]
-      else:
-        wget.download(link, "tmp/download.mp4")
-        object_key = "download.mp4"
+      # object_key = ""
+      # if "youtube.com" in link:
+      #   # Download using pytube library
+      #   yt = YouTube(link)
+      #   stream = yt.streams.first()
+      #   stream.download('tmp')
+
+      #   # Get the mp4 name
+      #   videos = []
+      #   videos += [each for each in os.listdir('tmp') if each.endswith('.mp4')]
+      #   print(videos)
+      #   object_key = videos[0]
+      # else:
+      #   wget.download(link, "tmp/download.mp4")
+      #   object_key = "download.mp4"
+
+      print(request)
+
+      f = open("tmp/download.mp4", "wb")
+      f.write(request.data)
+      f.close()
+      object_key = "download.mp4"
 
       # Perform the upload
       print('Uploading video to bucket {} with key: {}'.format(
@@ -94,7 +103,7 @@ def transcribe():
 
       print('Deleting the bucket.')
       bucket.delete()
-      print('Deleting the youtube video')
+      print('Deleting the video')
       os.remove('tmp/'+object_key)
     return json.dumps(postProcessData(data.json()))
 
