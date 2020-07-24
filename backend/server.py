@@ -56,7 +56,9 @@ def transcribe():
       #   object_key = "download.mp4"
 
       print(request)
-
+      # if not os.path.exists("tmp"):
+      #     os.mkdir("tmp")
+      print('test')
       f = open("tmp/download.mp4", "wb")
       f.write(request.data)
       f.close()

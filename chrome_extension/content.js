@@ -3,6 +3,7 @@ function navigateVideo(time, player) {
   player.currentTime = time;
 }
 
+
 function getTranscription(videoElement) {
   let src = "";
 
@@ -20,7 +21,7 @@ function getTranscription(videoElement) {
   if (src.substr(0,4) != "http") {
     src = window.location.origin + src;
   }
-  
+
   console.log("Src = ", src);
 
   // Asynchronously get the blob
@@ -36,8 +37,8 @@ function getTranscription(videoElement) {
       }
     };
 
-    // let url = "https://capstonecs1.ml/transcribe_file";
-    let url = "http://localhost:5000/transcribe";
+    let url = "https://capstonecs1.ml/transcribe_file";
+    //let url = "http://localhost:5000/transcribe";
     xhttp.open("POST", url, true);
     xhttp.setRequestHeader("Content-Type", "video/mp4");
     xhttp.send(bytes);
@@ -47,7 +48,9 @@ function getTranscription(videoElement) {
 function processResponse(response, player) {
   const obj = JSON.parse(response);
   let response_box = document.createElement("div");
-  for (let timestamp of obj.timestamps) {
+  let words = obj['alignment'][0];
+  let timestamps = obj['alignment'][1];
+  timestamps.forEach(function(timestamp, index) {
     let word_box = undefined;
     // Actual timestamp we want to create a link for
     if (timestamp.time >= 0) {
@@ -60,15 +63,10 @@ function processResponse(response, player) {
     }
     word_box.classList.add("text");
 
-    // Only add a space in front if it's a word, do not do so for punctuation
-    if (timestamp.type == "pronunciation") {
-      word_box.innerText = " " + timestamp.word;
-    } else {
-      word_box.innerText = timestamp.word;
-    }
+    word_box.innerText = " " + words[index];
 
     response_box.appendChild(word_box);
-  }
+  });
   // Create a new tab and inject the transcript there
   let t = window.open();
   t.document.body.appendChild(response_box);
@@ -98,8 +96,9 @@ window.addEventListener("load", () => {
   let videos = document.getElementsByTagName("video");
   for (let video of videos) {
     let transcribeButton = document.createElement("button");
-    transcribeButton.addEventListener("click", () => {
+    transcribeButton.addEventListener("click", function(event) {
       getTranscription(video);
+      event.preventDefault();
     });
     transcribeButton.classList.add("transcribeButton");
     transcribeButton.innerText="Transcribe";
