@@ -5,6 +5,7 @@ function navigateVideo(time, player) {
 
 
 function getTranscription(videoElement) {
+  document.getElementById('transcribingMarker').textContent = 'transcribing';
   let src = "";
 
   // Try to get src from the video
@@ -34,6 +35,8 @@ function getTranscription(videoElement) {
     xhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
         processResponse(xhttp.responseText, videoElement);
+      } else if (this.status == 502 || this.status == 500 || this.status == 503 || this.status == 504){
+        handleError(xhttp);
       }
     };
 
@@ -43,6 +46,10 @@ function getTranscription(videoElement) {
     xhttp.setRequestHeader("Content-Type", "video/mp4");
     xhttp.send(bytes);
   });
+}
+
+function handleError(err) {
+  document.getElementById('transcribingMarker').textContent = 'failedTranscribing';
 }
 
 function processResponse(response, player) {
@@ -87,7 +94,7 @@ function processResponse(response, player) {
   }
   `;
   t.document.body.appendChild(style);
-
+  document.getElementById('transcribingMarker').textContent = 'notTranscribing';
 }
 
 /* This code is always run for every page */
@@ -107,8 +114,26 @@ window.addEventListener("load", () => {
 
     // Make transcribe button appear on mouse hover
     let parentNode = video.parentNode;
+
+    let transcribingMarker = document.createElement('div');
+    transcribingMarker.id = 'transcribingMarker';
+    let transcriptionStatus = document.createTextNode('notTranscribing');
+    transcribingMarker.style.visibility = 'hidden';
+    transcribingMarker.append(transcriptionStatus);
+    document.body.appendChild(transcribingMarker);
+
     parentNode.addEventListener("mouseenter", function(event){
       transcribeButton.style.visibility = "visible";
+      let transcribingMarker = document.getElementById('transcribingMarker');
+      if (transcribingMarker != null && transcribingMarker.textContent == 'transcribing') {
+        transcribeButton.style.background = 'yellow';
+        transcribeButton.innerText="Transcribing... please wait";
+      } else if (transcribingMarker != null && transcribingMarker.textContent == 'failedTranscribing') {
+        transcribeButton.style.background = 'red';
+        transcribeButton.innerText="Transcription failed";
+      } else {
+        transcribeButton.style.background = '#4CAF50';
+      }
     });
     parentNode.addEventListener("mouseleave", function(event){
       transcribeButton.style.visibility = "hidden";
