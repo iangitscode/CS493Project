@@ -94,7 +94,7 @@ function processResponse(response, player) {
   }
   `;
   t.document.body.appendChild(style);
-  document.getElementById('transcribingMarker').textContent = 'notTranscribing';
+  document.getElementById('transcribingMarker').textContent = 'doneTranscribing';
 }
 
 /* This code is always run for every page */
@@ -131,8 +131,12 @@ window.addEventListener("load", () => {
       } else if (transcribingMarker != null && transcribingMarker.textContent == 'failedTranscribing') {
         transcribeButton.style.background = 'red';
         transcribeButton.innerText="Transcription failed";
+      } else if (transcribingMarker != null && transcribingMarker.textContent == 'doneTranscribing') {
+        transcribeButton.style.background = '#4CAF50';
+        transcribeButton.innerText="Finished transcription";
       } else {
         transcribeButton.style.background = '#4CAF50';
+        transcribeButton.innerText="Transcribe";
       }
     });
     parentNode.addEventListener("mouseleave", function(event){
