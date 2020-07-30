@@ -41,7 +41,6 @@ function getTranscription(videoElement) {
     };
 
     let url = "https://capstonecs1.ml/transcribe_file";
-    //let url = "http://localhost:5000/transcribe";
     xhttp.open("POST", url, true);
     xhttp.setRequestHeader("Content-Type", "video/mp4");
     xhttp.send(bytes);
@@ -53,26 +52,32 @@ function handleError(err) {
 }
 
 function processResponse(response, player) {
-  const obj = JSON.parse(response);
+  const parsed_response = JSON.parse(response);
+  let sentences = parsed_response["sentences"];
   let response_box = document.createElement("div");
-  let words = obj['alignment'][0];
-  let timestamps = obj['alignment'][1];
-  timestamps.forEach(function(timestamp, index) {
-    let word_box = undefined;
-    // Actual timestamp we want to create a link for
-    if (timestamp.time >= 0) {
-      word_box = document.createElement("a");
-      word_box.addEventListener("click", () =>  {navigateVideo(timestamp.time, player);});
-      word_box.classList.add("linked-timestamp");
-    } else {
-    // Do not create a link and only show the text
-      word_box = document.createElement("span");
-    }
-    word_box.classList.add("text");
+  sentences.forEach(function(sentence, sentenceIndex) {
+    let words = sentence["words"];
+    words.forEach(function(word, wordIndex) {
+      let word_box = undefined;
+      let timestamp = word["timestamp"];
+      if (timestamp >= 0) {
+        word_box = document.createElement("a");
+        word_box.addEventListener("click", () =>  {navigateVideo(timestamp, player);});
+        word_box.classList.add("linked-timestamp");
+      } else {
+        // Do not create a link and only show the text
+        word_box = document.createElement("span");
+      }
+      word_box.classList.add("text");
+      word_box.innerText = " " + word["value"];
+      // Add a new line for every punctuation
+      if (word["tags"]["is_punctuated"] == true) {
+        let line_break = document.createElement("br");
+        word_box.appendChild(line_break);
 
-    word_box.innerText = " " + words[index];
-
-    response_box.appendChild(word_box);
+      }
+      response_box.appendChild(word_box);
+    });
   });
   // Create a new tab and inject the transcript there
   let t = window.open();
