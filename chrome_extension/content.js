@@ -6,22 +6,7 @@ function navigateVideo(time, player) {
 
 function getTranscription(videoElement) {
   document.getElementById('transcribingMarker').textContent = 'transcribing';
-  let src = "";
-
-  // Try to get src from the video
-  // First see if the video has a src attribute
-  // This will either be the src or null
-  src = videoElement.getAttribute("src");
-
-  // If there are children elements, try to get a src from one of them
-  for (child of videoElement.children) {
-    src = src || child.src || child.getAttribute("src");
-  }
-
-  // If src is not a full path, add on the origin
-  if (src.substr(0,4) != "http") {
-    src = window.location.origin + src;
-  }
+  let src = videoElement.currentSrc;
 
   console.log("Src = ", src);
 
@@ -53,10 +38,24 @@ function handleError(err) {
 
 function processResponse(response, player) {
   const parsed_response = JSON.parse(response);
+  const MAX_BLOCK_WORD_COUNT = 150;
   let sentences = parsed_response["sentences"];
   let response_box = document.createElement("div");
+
+  // Create a new tab and inject the transcript there
+  let t = window.open();
+  t.document.body.appendChild(response_box);
+
+  // Split text into blocks of approximately equal length
+  let currentBlock = document.createElement("div");
+  currentBlock.classList.add("block");
+  response_box.appendChild(currentBlock);
+  currentBlock.style.visibility = "hidden";
+  let currentWordCount = 0;
+
   sentences.forEach(function(sentence, sentenceIndex) {
     let words = sentence["words"];
+    currentWordCount += words.length;
     words.forEach(function(word, wordIndex) {
       let word_box = undefined;
       let timestamp = word["timestamp"];
@@ -70,24 +69,35 @@ function processResponse(response, player) {
       }
       word_box.classList.add("text");
       word_box.innerText = " " + word["value"];
-      // Add a new line for every punctuation
-      if (word["tags"]["is_punctuated"] == true) {
-        let line_break = document.createElement("br");
-        word_box.appendChild(line_break);
 
-      }
-      response_box.appendChild(word_box);
+      currentBlock.appendChild(word_box);
     });
+
+    // If after adding this sentence the currentBlock is too big, create a new one
+    if (currentWordCount >= MAX_BLOCK_WORD_COUNT) {
+      currentWordCount = 0;
+      currentBlock.style.visibility = "visible";
+
+      currentBlock = document.createElement("div");
+      currentBlock.classList.add("block");
+      response_box.appendChild(currentBlock);
+      currentBlock.style.visibility = "hidden";
+    }
   });
-  // Create a new tab and inject the transcript there
-  let t = window.open();
-  t.document.body.appendChild(response_box);
+
+  // Flush the last block by making it visible
+  currentBlock.style.visibility = "visible";
 
   // Inject CSS into the new tab
   let style = document.createElement("style");
-  style.innerText = `
-  .text {
-    font-size: 20px;
+  style.textContent = `
+  body {
+    font-family: Arial;
+    font-size: 30px;
+  }
+
+  .block {
+    padding: 100px 300px 0 300px;
   }
 
   .linked-timestamp {
@@ -98,7 +108,7 @@ function processResponse(response, player) {
     color: #4660b8;
   }
   `;
-  t.document.body.appendChild(style);
+  t.document.head.append(style);
   document.getElementById('transcribingMarker').textContent = 'doneTranscribing';
 }
 
