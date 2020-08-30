@@ -2,7 +2,7 @@
   "name": "Nibis",
   "version": "0.2",
   "description": "Transcribe and navigate speech!",
-  "manifest_version": 3,
+  "manifest_version": 2,
   "permissions": ["activeTab", "tabs"],
   "content_scripts": [{
     "matches": ["<all_urls>"],
